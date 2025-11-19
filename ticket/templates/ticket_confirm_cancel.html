@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %} Metro Ticketing System {% endblock %}
+
+{% block content %}
+<h1 class='text-center mt-4'> Are you sure you want to cancel this ticket?</h1>
+    <div class="card" style="width: 24rem;">
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.id}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}} <br></p>
+            </div>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger mt-4">Cancel</button>
+        <a href="{% url "ticket_list"%}" class="btn btn-primary mt-4">Go back</a>
+
+    </form>
+{% endblock %}

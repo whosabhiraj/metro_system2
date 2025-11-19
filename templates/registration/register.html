@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %} Metro Ticketing System {% endblock %}
+
+{% block content %}
+<br>
+<form method='post'>
+    {% csrf_token %}
+    {{form.as_p}}
+    <button class = 'btn btn-primary'>Register</button>
+</form>
+<br>
+<h6>Already have an account? <a href="{% url "login" %}">Login here</a></h4>
+{% endblock %}

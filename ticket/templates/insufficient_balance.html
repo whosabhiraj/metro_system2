@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block title %} Metro Ticketing System {% endblock %}
+
+{% block content %}
+<br>
+<h2>You do not have sufficient balance to get that ticket.</h2>
+<br>
+<a class="btn btn-primary" href="{% url "add_money" %}" role="button">Add money</a>
+<br>
+{% endblock %}
