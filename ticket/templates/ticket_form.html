@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block title %} Metro Ticketing System {% endblock %}
+
+{% block content %}
+<style>h1 {text-align: center;}</style>
+<br>
+<h1>Create a ticket</h1>
+
+<h3>
+    Ticket for {{request.user.username}}
+    <br>
+    <br>
+    <form method="post">
+        {{form.as_p}}
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Create Ticket</button>
+    </form>
+
+</h3>
+
+
+{% endblock %}

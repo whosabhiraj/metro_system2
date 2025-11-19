@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %} Metro Ticketing System {% endblock %}
+
+{% block content %}
+<br>
+<h2>Add money to your wallet</h2>
+<br>
+<form method='post'>
+    {% csrf_token %}
+    {{form.as_p}}
+    <button class = 'btn btn-primary'>Add</button>
+</form>
+<br>
+{% endblock %}
