@@ -26,16 +26,36 @@ SECRET_KEY = 'django-insecure-6e2kebau_=dx+=um#bqc&7vi-77y0#71h5a=%5=7urwq_$@h3_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.17.23.175', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['172.17.23.175', 'localhost', '127.0.0.1', '*']
+
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.dev/']
+
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    # The following apps are required:
+
+    'allauth',
+    'allauth.account',
+
+    'allauth.socialaccount', 
+    'allauth.socialaccount.providers.google',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ticket',
@@ -49,6 +69,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        # Add the account middleware:
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'metro_system.urls'
@@ -63,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                
             ],
         },
     },
@@ -134,3 +157,9 @@ LOGIN_REDIRECT_URL = '/ticket/'
 LOGOUT_REDIRECT_URL = '/ticket/'
 
 AUTH_USER_MODEL = 'ticket.CustomUser'
+
+SITE_ID = 1
+ACCOUNT_LOGOUT_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+LOGOUT_REDIRECT_URL = '/accounts/login'
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'

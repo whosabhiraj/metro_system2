@@ -74,8 +74,8 @@ def register(request):
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password1'])
             user.save()
-            login(request, user)
-            redirect('ticket_list')
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend') # type: ignore
+        redirect('ticket_list')
     else:
         form = RegistrationForm()
         
