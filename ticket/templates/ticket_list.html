@@ -34,9 +34,11 @@
                                             <span style="color: red;">Expired</span>
                                         {% endif %}
                 </p>
-
+            
+        {% if ticket.status == 'ACTIVE' %}
             <a href="{% url "ticket_cancel" ticket.id %}" class="btn btn-danger">Cancel ticket</a>
-        </div>
+        {% endif %}        
+    </div>
 </div>
     {% endif %}
     {% endfor %}

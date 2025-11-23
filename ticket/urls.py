@@ -1,5 +1,5 @@
 from . import views
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
     path('', views.ticket_list, name='ticket_list'),
@@ -9,5 +9,6 @@ urlpatterns = [
     path('add_money/', views.add_money, name='add_money'),
     path('insufficient_balance/', views.insufficient_balance, name='insufficient_balance'),
     path('scanner/', views.scan_ticket, name='scanner'),
-    path('index', views.index, name='index')
+    path('index', views.index, name='index'),
+    # path('accounts/', include('allauth.urls')), THIS CAUSED AN ISSUE
 ]
