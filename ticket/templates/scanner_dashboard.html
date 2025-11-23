@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block title %} Station Scanner {% endblock %}
+
+{% block content %}
+<style>
+    h1 {text-align: center;}
+    /* Basic coloring for feedback messages */
+    .msg-success { color: green; font-weight: bold; }
+    .msg-error { color: red; font-weight: bold; }
+</style>
+<br>
+<h1>Station Scanner: {{ station_name }}</h1>
+
+<h3>
+    Ready to Scan
+    <br>
+    <br>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg-{{ message.tags }}">
+                {{ message }}
+            </div>
+            <br>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            <label for="ticket_uid">Ticket ID:</label>
+            <input type="text" name="ticket_uid" id="ticket_uid" class="form-control" style="width: auto; display: inline-block;">
+        </p>
+
+        <button type="submit" class="btn btn-primary">Validate Ticket</button>
+    </form>
+
+</h3>
+
+{% endblock %}

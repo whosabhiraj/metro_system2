@@ -1,13 +1,14 @@
 from django.shortcuts import render
 from .forms import TicketForm, RegistrationForm, AddMoneyForm
-from .models import Ticket, Station, Line
+from .models import Ticket, Station, Line, ScannerProfile
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.models import User
 import os
 import sys
-import fare
+import metro_orm as fare
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
+from django.contrib import messages
 
 directory_path = os.path.abspath('F:/code/djangolearn/metro_system/')
 sys.path.append(directory_path)
@@ -19,8 +20,11 @@ def index(request):
 
 @login_required
 def ticket_list(request):
-    tickets = Ticket.objects.all()
-    return render(request, 'ticket_list.html', {'tickets': tickets})
+    # if ScannerProfile:
+    #     return redirect("scanner")
+    # else:
+        tickets = Ticket.objects.all()
+        return render(request, 'ticket_list.html', {'tickets': tickets})
 
 def ticket_create(request):
     if request.method == 'POST':
@@ -32,11 +36,21 @@ def ticket_create(request):
             if request.user.balance < generated_ticket.price:
                 return render(request, 'insufficient_balance.html')
             ticket.price = generated_ticket.price
-            ticket.save()
             balance = request.user.balance - ticket.price
             request.user.balance = balance
             request.user.save()
+            uid = generated_ticket.id
+
+            Ticket.objects.create(
+            user = request.user,
+            uid=uid,
+            start_station=ticket.start_station,
+            end_station=ticket.end_station,
+            price=ticket.price
+        )
+            
             return redirect('ticket_list')
+        
     else:
         form = TicketForm()
 
@@ -83,3 +97,42 @@ def add_money(request):
 
 def insufficient_balance(request):
     return render(request, 'insufficient_balance.html')
+
+@login_required
+def scan_ticket(request):
+    try:
+        scanner_location = request.user.scannerprofile.station
+    except ScannerProfile.DoesNotExist: 
+        messages.error(request, "Access Denied: No station assigned.")
+        return redirect('index')
+
+    if request.method == 'POST':
+        uid = request.POST.get('ticket_uid').strip()
+        
+        try:
+            ticket = Ticket.objects.get(uid=uid)
+            
+            if ticket.status == Ticket.Status.ACTIVE:
+                if ticket.start_station.lower() == scanner_location.lower():
+                    ticket.status = Ticket.Status.IN_USE
+                    ticket.save()
+                    messages.success(request, f"Entry Approved at {scanner_location}!")
+                else:
+                    messages.error(request, f"Wrong Station. Ticket is for {ticket.start_station}.")
+
+            elif ticket.status == Ticket.Status.IN_USE:
+                if ticket.end_station.lower() == scanner_location.lower():
+                    ticket.status = Ticket.Status.EXPIRED
+                    ticket.save()
+                    messages.success(request, f"Exit Approved at {scanner_location}!")
+                else:
+                    messages.error(request, f"Wrong Destination. Ticket is for {ticket.end_station}.")
+            
+            elif ticket.status == Ticket.Status.EXPIRED:
+                messages.error(request, "Ticket already used.")
+
+        except Ticket.DoesNotExist:
+            messages.error(request, "Ticket not found.")
+
+    return render(request, 'scanner_dashboard.html', {'station_name': scanner_location})
+

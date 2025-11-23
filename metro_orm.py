@@ -1,9 +1,11 @@
-import csv
 import random
+import os
+import django
 
-stations_data = "stations.csv"
-lines_data = "lines.csv"
-tickets_data = "tickets.csv"
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+django.setup()
+
+from ticket.models import Station, Line, Ticket
 
 class line():
     def __init__(self, name, station_ids):
@@ -30,45 +32,37 @@ class metro_system():
 
     def load_stations(self):
         stations = []
-        with open(stations_data, mode ='r') as file:
-            csvFile = csv.reader(file)
-            next(csvFile)
-
-            for lines in csvFile:
-                station_id, name= lines
-                stations.append(station(name, station_id))
+        # using django table instead of csv
+        db_stations = Station.objects.all()
+        
+        for s in db_stations:
+            stations.append(station(s.name, str(s.id)))
 
         return stations
     
 
     def load_lines(self):
         lines = {}
+        db_lines = Line.objects.all()
 
-        with open(lines_data, mode ='r') as file:
-            csvFile = csv.reader(file)
-            next(csvFile)
-
-            for line in csvFile:
-                color = line[0]
-                stations_on_line = line[1].split(';')
-                lines[color] = stations_on_line
+        for l in db_lines:
+            name = l.name
+            stations_on_line = l.stations_online.split(';')
+            lines[name] = stations_on_line
 
         return lines
     
     
     def load_tickets(self):
         tickets = {}
+        db_tickets = Ticket.objects.all()
 
-        with open(tickets_data, mode ='r') as file:
-            csvFile = csv.reader(file)
-            next(csvFile)
-
-            for line in csvFile:
-                ticket_id = line[0]
-                start_name = line[1]
-                end_name = line[2]
-                price = line[3]
-                tickets[ticket_id] = [ticket_id, start_name, end_name, price]
+        for t in db_tickets:
+            ticket_id = t.id
+            start_name = t.start_station
+            end_name = t.end_station
+            price = str(t.price) # retain csv behaviour as reading csv used to output str
+            tickets[ticket_id] = [ticket_id, start_name, end_name, price]
             
         return tickets
 
@@ -105,9 +99,6 @@ class metro_system():
         ticket_new = ticket(uid, start_name, end_name, price*length)
         self.display_tickets(ticket_new)
         
-        with open(tickets_data, mode ='a', newline='') as file:
-            csvFile = csv.writer(file)
-            csvFile.writerow([uid, start_name, end_name, price*length])
         return ticket_new
 
     
@@ -152,18 +143,7 @@ class metro_system():
 
 
     def ticket_viewer(self, mode): 
-        tickets = {}
-
-        with open(tickets_data, mode ='r') as file:
-            csvFile = csv.reader(file)
-            next(csvFile)
-
-            for line in csvFile:
-                ticket_id = line[0]
-                start_name = line[1]
-                end_name = line[2]
-                price = line[3]
-                tickets[ticket_id] = [ticket_id, start_name, end_name, price]
+        tickets = self.load_tickets()
         
         if len(tickets) == 0:
             print("No tickets found.")
@@ -172,7 +152,10 @@ class metro_system():
 
         if mode == "1":
             uid = input("Enter your ticket ID: ").strip()
-            self.display_tickets(ticket(*tickets.get(uid))) # type: ignore
+            if uid in tickets:
+                self.display_tickets(ticket(*tickets.get(uid))) # type: ignore
+            else:
+                print("Ticket not found.")
 
         elif mode == "2":
             for uid in tickets:
