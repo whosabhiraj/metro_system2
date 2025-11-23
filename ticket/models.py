@@ -12,6 +12,12 @@ class Ticket(models.Model):
     end_station = models.CharField(max_length=100)
     price = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    uid = models.CharField(max_length=20)
+    class Status(models.TextChoices):
+        ACTIVE = 'ACTIVE', 'Active'
+        IN_USE = 'IN_USE', 'In Use'
+        EXPIRED = 'EXPIRED', 'Expired'
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
 
     def __str__(self):
         return f"Ticket for {self.user.username}"
@@ -19,7 +25,6 @@ class Ticket(models.Model):
 class Station(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    line = models.ForeignKey('Line', on_delete=models.CASCADE, related_name='stations')
 
     def __str__(self):
         return self.name
@@ -27,6 +32,7 @@ class Station(models.Model):
 class Line(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
+    stations_online = models.TextField()
 
     def __str__(self):
         return self.name
@@ -37,3 +43,9 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
     
+class ScannerProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    station = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.station}"

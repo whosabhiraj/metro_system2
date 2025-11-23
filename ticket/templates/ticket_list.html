@@ -21,13 +21,24 @@
 
 <div class="container row gap-3">
     {% for ticket in tickets %}
+    {% if ticket.user == request.user %}
         <div class="card" style="width: 24rem;">
         <div class="card-body">
-            <h5 class="card-title"> Ticket ID {{ticket.id}} </h5>
+            <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
             <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+            <p class="card-text bold-text" >Status: {% if ticket.status == 'ACTIVE' %}
+                                        <span style="color: green;">Active</span>
+                                        {% elif ticket.status == 'IN_USE' %}
+                                            <span style="color: orange;">In Use</span>
+                                        {% else %}
+                                            <span style="color: red;">Expired</span>
+                                        {% endif %}
+                </p>
+
             <a href="{% url "ticket_cancel" ticket.id %}" class="btn btn-danger">Cancel ticket</a>
         </div>
 </div>
+    {% endif %}
     {% endfor %}
 </div>
 
