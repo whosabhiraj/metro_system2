@@ -99,8 +99,12 @@ WSGI_APPLICATION = 'metro_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'database',
+        'USER': 'postgres',
+        'PASSWORD': 'abhiraj',
+        'HOST': '',
+        'PORT': '5432',
     }
 }
 
@@ -149,9 +153,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
 LOGIN_URL = '/accounts/login'
 LOGIN_REDIRECT_URL = '/ticket/'
 LOGOUT_REDIRECT_URL = '/ticket/'
@@ -162,4 +163,26 @@ SITE_ID = 1
 ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 LOGOUT_REDIRECT_URL = '/accounts/login'
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' #TODO: CHANGE THIS WHILE DEMO
+
+SOCIALACCOUNT_QUERY_EMAIL = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+EMAIL_HOST_USER = 'metrosystem.otp@gmail.com'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST_PASSWORD = 'ygza coxm tpuf qtwx'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True

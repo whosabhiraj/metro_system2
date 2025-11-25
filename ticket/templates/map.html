@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %} Network Map {% endblock %}
+
+{% block content %}
+<style>
+    h1 { text-align: center; }
+    
+    /* specific styling for the map visualization */
+    .line-card { margin-bottom: 2rem; }
+    .station-badge { font-size: 1.1em; padding: 10px; }
+    .arrow { margin: 0 10px; color: #adb5bd; }
+</style>
+
+<br>
+<h1>Metro Network Map</h1>
+<br>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+
+        {% if map %}
+            {% for item in map %}
+                <div class="card line-card">
+                    <div class="card-header">
+                        <h3>{{ item.line }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center">
+                            
+                            {% for station in item.stations %}
+                                <span class="badge bg-secondary station-badge">
+                                    {{ station }}
+                                </span>
+
+                                {% if not forloop.last %}
+                                    <span class="arrow">&harr;</span>
+                                {% endif %}
+                            {% endfor %}
+
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-warning text-center">
+                No metro lines found in the system.
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}
