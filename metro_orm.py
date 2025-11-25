@@ -5,7 +5,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 django.setup()
 
-from ticket.models import Station, Line, Ticket
+from ticket.models import Station, Line, Ticket, ThroughTable
 
 class line():
     def __init__(self, name, station_ids):
@@ -25,9 +25,28 @@ class ticket():
         self.price = price
 
 
+class NoPathError(Exception): # if stations aren't connected
+    def __init__(self, start_station, end_station):
+        self.start_station = start_station
+        self.end_station = end_station
+        self.message = f"No path found between {start_station} and {end_station}."
+        super().__init__(self.message) 
+
+class ZeroPathError(Exception): # if selected stations are the same
+    def __init__(self, start_station, end_station):
+        self.start_station = start_station
+        self.end_station = end_station
+        self.message = f"Please select two distinct stations."
+        super().__init__(self.message) # exception constructor calls parent class
+
+
 class metro_system():
     def __init__(self):
         self.stations = self.load_stations()
+        self.lines = self.load_lines()
+
+        self.station_id_to_name = {s.id: s.name for s in self.stations} # lookup names for given id 
+        self.station_name_to_id = {s.name.lower(): s.id for s in self.stations} # vice versa
         
 
     def load_stations(self):
@@ -36,7 +55,7 @@ class metro_system():
         db_stations = Station.objects.all()
         
         for s in db_stations:
-            stations.append(station(s.name, str(s.id)))
+            stations.append(station(s.name, s.id))
 
         return stations
     
@@ -46,9 +65,8 @@ class metro_system():
         db_lines = Line.objects.all()
 
         for l in db_lines:
-            name = l.name
-            stations_on_line = l.stations_online.split(';')
-            lines[name] = stations_on_line
+            stations_on_line = list(ThroughTable.objects.filter(line=l).order_by('order').values_list('station_id', flat=True))
+            lines[l.id] = stations_on_line 
 
         return lines
     
@@ -59,8 +77,8 @@ class metro_system():
 
         for t in db_tickets:
             ticket_id = t.id
-            start_name = t.start_station
-            end_name = t.end_station
+            start_name = t.start_station.name # we dont access load_tickets outside __main__ so loading by names is fine
+            end_name = t.end_station.name
             price = str(t.price) # retain csv behaviour as reading csv used to output str
             tickets[ticket_id] = [ticket_id, start_name, end_name, price]
             
@@ -90,13 +108,19 @@ class metro_system():
         print("---------------------------")
 
 
-    def generate_ticket(self, start_name, end_name):
-        path = self.pathfind(start_name, end_name)
+    def generate_ticket(self, start_id, end_id):
+        path = self.pathfind(start_id, end_id)
+        
         price = 10
-        length = path.index(end_name) - path.index(start_name) # type: ignore
+        if path is None:
+            raise NoPathError(start_id, end_id)
+        if len(path) == 1:
+            raise ZeroPathError(start_id, end_id)
+        
+        length = len(path) - 1
         uid = str(random.randint(100000, 999999))
 
-        ticket_new = ticket(uid, start_name, end_name, price*length)
+        ticket_new = ticket(uid, start_id, end_id, price*length)
         self.display_tickets(ticket_new)
         
         return ticket_new
@@ -105,11 +129,11 @@ class metro_system():
     def generate_graph(self, lines_dict):
         graph = {}
 
-        for line in lines_dict:
-            stations = lines_dict[line]
-            for i in range(len(stations) - 1):
-                a = stations[i].strip().lower()
-                b = stations[i + 1].strip().lower()
+        for line_id, station_ids in lines_dict.items():
+
+            for i in range(len(station_ids) - 1):
+                a = station_ids[i]
+                b = station_ids[i + 1]
 
                 if a not in graph:
                     graph[a] = []
@@ -122,16 +146,16 @@ class metro_system():
         return graph
 
 
-    def pathfind(self, start_name, end_name):
+    def pathfind(self, start_id, end_id):
         graph = self.generate_graph(self.load_lines())
         visited = []
-        queue = [[start_name]]
+        queue = [[start_id]]
 
         while len(queue) > 0:
             path = queue.pop(0)
             node = path[-1]
 
-            if node == end_name:
+            if node == end_id:
                 return(path)
 
             if node not in visited:

@@ -10,5 +10,6 @@ urlpatterns = [
     path('insufficient_balance/', views.insufficient_balance, name='insufficient_balance'),
     path('scanner/', views.scan_ticket, name='scanner'),
     path('index', views.index, name='index'),
+    path('map/', views.ticket_map, name='ticket_map'),
     # path('accounts/', include('allauth.urls')), THIS CAUSED AN ISSUE
 ]

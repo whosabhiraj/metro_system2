@@ -1,23 +1,66 @@
 {% extends "layout.html" %}
 
-{% block title %} Metro Ticketing System {% endblock %}
+{% block title %} Book Ticket - Metro System {% endblock %}
 
 {% block content %}
-<style>h1 {text-align: center;}</style>
-<br>
-<h1>Create a ticket</h1>
+<h1 class='text-center mt-4'>Book a New Ticket</h1>
 
-<h3>
-    Ticket for {{request.user.username}}
-    <br>
-    <br>
-    <form method="post">
-        {{form.as_p}}
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary">Create Ticket</button>
-    </form>
+<div class="d-flex justify-content-center">
+    <div class="card mt-4" style="width: 24rem;">
+        <div class="card-body">
+            
+            {% if otp_sent %}
+                <div class="alert alert-success" role="alert">
+                    OTP sent to your email!<br>
+                    <small>Please enter it below to confirm.</small>
+                </div>
+            {% else %}
+                <h4 class="card-title mb-4">Select Route</h5>
+            {% endif %}
 
-</h3>
+            <form method="post">
+                {% csrf_token %}
 
+                <div class="mb-3" {% if otp_sent %}style="display:none"{% endif %}>
+                    <label class="form-label">Start Station</label>
+                    {{ form.start_station }} 
+                    </div>
 
+                <div class="mb-3" {% if otp_sent %}style="display:none"{% endif %}>
+                    <label class="form-label">End Station</label>
+                    {{ form.end_station }}
+                </div>
+                {% if messages %}
+                {% for message in messages %}
+                    <div class="msg-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    <br>
+                {% endfor %}
+                {% endif %}
+                {% if otp_sent %}
+                    <p class="card-text">
+                        <strong>From:</strong> {{ form.cleaned_data.start_station }}<br>
+                        <strong>To:</strong> {{ form.cleaned_data.end_station }} <br>
+                        <strong>Price:</strong> {{ ticket_price }}
+                    </p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Enter OTP</label>
+                        <input type="number" name="otp" class="form-control" placeholder="123456" required>
+                    </div>
+                {% endif %}
+
+                {% if otp_sent %}
+                    <button type="submit" class="btn btn-success mt-4 w-100">Confirm & Buy</button>
+                    <a href="{% url 'ticket_create' %}" class="btn btn-danger mt-2 w-100">Cancel</a>
+                {% else %}
+                    <button type="submit" class="btn btn-primary mt-4 w-100">Get OTP</button>
+                    <a href="{% url 'ticket_list' %}" class="btn btn-secondary mt-2 w-100">Go back</a>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
