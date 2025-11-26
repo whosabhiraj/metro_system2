@@ -1,9 +1,5 @@
 import random
-import os
 import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
-django.setup()
 
 from ticket.models import Station, Line, Ticket, ThroughTable
 

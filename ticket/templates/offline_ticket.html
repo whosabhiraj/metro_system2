@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %} Offline Validation {% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            
+            <div class="text-center mb-4">
+                <h1 class="fw-bold">Offline Entry at {{station_name}}</h1>
+                <p class="text-muted">Manual entry for {{ station_name }}</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h5 class="mb-0">Start Journey</h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-bold">Username</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Enter passenger username" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="end_station" class="form-label fw-bold">Destination Station</label>
+                            <select name="end_station" id="end_station" class="form-select" required>
+                                <option value="" selected disabled>-- Select Destination --</option>
+                                {% for station in stations %}
+                                    {% if station.name != station_name %}
+                                        <option value="{{ station.id }}">{{ station.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Validate & Charge
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+                <div class="card-footer text-center small text-muted">
+                    Payment to be made offline.
+                </div>
+                
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
