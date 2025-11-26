@@ -63,8 +63,10 @@ def ticket_create(request):
                         start_station=start_station,
                         end_station=end_station,
                         price=saved_price,
+                        uid = request.session.get("uid"),
                     )
 
+                    del request.session["uid"]
                     del request.session["sent_otp"]
                     del request.session["ticket_price"]
 
@@ -97,6 +99,7 @@ def ticket_create(request):
 
                 request.session["sent_otp"] = sent_otp.pk
                 request.session["ticket_price"] = generated_ticket.price
+                request.session["uid"] = generated_ticket.id
 
                 send_mail(
                     subject="Metro system OTP",
