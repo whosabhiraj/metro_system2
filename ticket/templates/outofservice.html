@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %} Maintenance - Metro System {% endblock %}
+
+{% block content %}
+<h1 class='text-center mt-4'>System Status</h1>
+
+<div class="d-flex justify-content-center">
+    <div class="card mt-4" style="width: 24rem; border-top: 5px solid #dc3545;">
+        <div class="card-body text-center">
+            
+            <div class="mb-4 mt-2">
+                <span style="font-size: 4rem;">⛔</span>
+            </div>
+
+            <h4 class="card-title mb-3">Service Unavailable</h4>
+
+
+            <p class="card-text text-muted mb-4">
+                The Metro Ticketing System is currently offline. Tickets cannot be booked at this time.
+            </p>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

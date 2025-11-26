@@ -1,0 +1,209 @@
+{% extends "layout.html" %}
+
+{% block title %} Admin Dashboard {% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="fw-bold">Admin Dashboard</h1>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        <h3>{{ message }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">Daily Footfall Stats</h5>
+                    <form method="get" class="d-flex align-items-center">
+                        <input type="date" name="date" class="form-control form-control-sm me-2" value="{{ selected_date|date:'Y-m-d' }}">
+                        <button type="submit" class="btn btn-sm btn-dark">Filter</button>
+                    </form>
+                </div>
+                
+                <div class="card-body">
+                    {% if footfall_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered text-center align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Station</th>
+                                    <th>Entered</th>
+                                    <th>Exited</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in footfall_data %}
+                                <tr>
+                                    <td class="text-start fw-semibold">{{ stat.station.name }}</td>
+                                    <td class="text-success">+{{ stat.into }}</td>
+                                    <td class="text-danger">-{{ stat.out }}</td>
+                                    <td class="bg-light"><strong>{{ stat.into|add:stat.out }}</strong></td>
+                                    <td class="text-muted small">{{ stat.date }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center m-0">No data found for this date.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h4 class="mb-3 text-secondary">Network Map</h4>
+            {% for item in map %}
+                <div class="card shadow-sm mb-3 border-0">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ item.line }} Line</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            {% for station in item.stations %}
+                                <span class="badge rounded-pill bg-secondary fs-6 shadow-sm">
+                                    {{ station }}
+                                </span>
+                                {% if not forloop.last %}
+                                    <i class="text-muted fw-bold">&rarr;</i>
+                                {% endif %}
+                            {% empty %}
+                                <span class="text-muted fst-italic">No stations on this line yet.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">No lines created yet.</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card shadow-sm mb-4 border-{% if service_status %}success{% else %}danger{% endif %}">
+                <div class="card-header text-center fw-bold">
+                    System Control
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-2 small text-uppercase">Current Status</p>
+                    {% if service_status %}
+                        <h3 class="text-success fw-bold mb-3">ACTIVE</h3>
+                        <form method="post" action="{% url 'service_toggle' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100">Suspend Service</button>
+                        </form>
+                    {% else %}
+                        <h3 class="text-danger fw-bold mb-3">SUSPENDED</h3>
+                        <form method="post" action="{% url 'service_toggle' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100">Activate Service</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    Add New Line
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'add_line' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Line Name</label>
+                            <input type="text" name="line_name" class="form-control" placeholder="e.g. Red Line" required>
+                        </div>
+                        <button class="btn btn-primary w-100">Create Line</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    Add New Station
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'add_station' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Station Name</label>
+                            <input type="text" name="station_name" class="form-control" placeholder="e.g. Central Plaza" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label small text-muted">Assign Line</label>
+                                <select name="line" class="form-select" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for line in lines %}
+                                        <option value="{{ line.id }}">{{ line.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small text-muted">Order #</label>
+                                <input type="number" min="1" name="order" class="form-control" placeholder="Pos" required>
+                            </div>
+                        </div>
+                        <button class="btn btn-success w-100">Create Station</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    Link Existing Station
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Add a connection point for an already existing station.</p>
+                    <form method="post" action="{% url 'link_station' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Existing Station</label>
+                            <select name="station_id" class="form-select" required>
+                                <option value="" selected disabled>-- Choose Station --</option>
+                                {% for station in stations %}
+                                    <option value="{{ station.id }}">{{ station.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label small text-muted">Target Line</label>
+                                <select name="line_id" class="form-select" required>
+                                    {% for line in lines %}
+                                        <option value="{{ line.id }}">{{ line.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small text-muted">Order #</label>
+                                <input type="number" name="order" min="1" class="form-control" placeholder="Pos" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100">Link Station</button>
+                    </form>
+                </div>
+            </div>
+
+        </div> </div> </div>
+{% endblock %}

@@ -6,4 +6,12 @@
 <br>
 <h1>Something went wrong. <a href="{% url "ticket_list" %}" class="card-link">Go back</a>
 </h1>
+{% if messages %}
+                {% for message in messages %}
+                    <div class="msg-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    <br>
+                {% endfor %}
+                {% endif %}
 {% endblock %}

@@ -1,17 +1,14 @@
 from django.shortcuts import render
 from .forms import TicketForm, RegistrationForm, AddMoneyForm
-from .models import Ticket, Line, ScannerProfile, ThroughTable, OTP
+from .models import Ticket, Station, Line, ScannerProfile, ThroughTable, OTP, FootFall, ServiceStatus, CustomUser
 from django.shortcuts import get_object_or_404, redirect
-import metro_orm as fare
+from . import metro_orm as fare
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.contrib import messages
-import datetime, random, os, sys
+import datetime, random
 from django.utils import timezone
 from django.core.mail import send_mail
-
-directory_path = os.path.abspath("F:/code/djangolearn/metro_system/")
-sys.path.append(directory_path)
 
 # Create your views here.
 
@@ -22,13 +19,22 @@ def index(request):
 
 @login_required
 def ticket_list(request):
-    # if ScannerProfile:
-    #     return redirect("scanner")
-    # else:
-
-    tickets = Ticket.objects.all()
+    if ServiceStatus.objects.exists():
+        service_status = ServiceStatus.objects.first().active # type: ignore
+        # print(service_status)
+        if not service_status:
+            return render(request, "outofservice.html")
+    try:
+        profile = ScannerProfile.objects.get(user=request.user)
+        if profile:
+            return redirect('scanner')
+        
+    except ScannerProfile.DoesNotExist:
+        pass
+    
+    tickets = Ticket.objects.filter(user=request.user)
     for ticket in tickets:
-        if ticket.created_at + datetime.timedelta(days=1) < timezone.now():
+        if ticket.created_at + datetime.timedelta(days = 1) < timezone.now():
             ticket.status = ticket.Status.EXPIRED
             ticket.save()
 
@@ -63,13 +69,13 @@ def ticket_create(request):
                         start_station=start_station,
                         end_station=end_station,
                         price=saved_price,
-                        uid = request.session.get("uid"),
+                        uid=request.session['uid'],
                     )
 
                     del request.session["uid"]
                     del request.session["sent_otp"]
                     del request.session["ticket_price"]
-
+                    
                     return redirect("ticket_list")
                 elif (saved_otp.created_at + datetime.timedelta(minutes=15) < timezone.now()):
                     # case otp expired
@@ -95,7 +101,7 @@ def ticket_create(request):
 
                 sent_otp = OTP(code=random.randint(100000, 999999))
                 sent_otp.save()
-                print(sent_otp.code)  # for testing
+                # print(sent_otp.code)  # for testing
 
                 request.session["sent_otp"] = sent_otp.pk
                 request.session["ticket_price"] = generated_ticket.price
@@ -188,9 +194,15 @@ def scan_ticket(request):
             ticket = Ticket.objects.get(uid=uid)
 
             if ticket.status == Ticket.Status.ACTIVE:
-                if ticket.start_station == scanner_location.id:
+                if ticket.start_station.id == scanner_location.id:
                     ticket.status = Ticket.Status.IN_USE
                     ticket.save()
+                    footfall = FootFall.objects.filter(station=scanner_location, date=datetime.date.today()).first()
+                    if not footfall:
+                        footfall = FootFall(station=scanner_location, date=datetime.date.today(), into=1, out=0)
+                    else:
+                        footfall.into += 1
+                    footfall.save()
                     messages.success(
                         request, f"Entry Approved at {scanner_location.name}!"
                     )
@@ -200,9 +212,15 @@ def scan_ticket(request):
                     )
 
             elif ticket.status == Ticket.Status.IN_USE:
-                if ticket.end_station == scanner_location.id:
+                if ticket.end_station.id == scanner_location.id:
                     ticket.status = Ticket.Status.USED
                     ticket.save()
+                    footfall = FootFall.objects.filter(station=scanner_location, date=datetime.date.today()).first()
+                    if not footfall: # if no entry is found, entry is made
+                        footfall = FootFall(station=scanner_location, date=datetime.date.today(), into=0, out=1)
+                    else: # if entry is found, count is incremented
+                        footfall.out += 1
+                    footfall.save()
                     messages.success(
                         request, f"Exit Approved at {scanner_location.name}!"
                     )
@@ -213,13 +231,18 @@ def scan_ticket(request):
                     )
 
             elif ticket.status == Ticket.Status.EXPIRED:
-                messages.error(request, "Ticket already used.")
+                messages.error(request, "Ticket expired.")
 
         except Ticket.DoesNotExist:
             messages.error(request, "Ticket not found.")
 
+    context = {
+        'is_scanner': True,
+        "station_name": scanner_location.name,
+    }
+
     return render(
-        request, "scanner_dashboard.html", {"station_name": scanner_location.name}
+        request, "scanner_dashboard.html", context
     )
 
 
@@ -241,6 +264,145 @@ def ticket_map(request):
     context = {"map": map}
     return render(request, "map.html", context)
 
+
+@login_required
+def admin(request):
+    if request.user.is_superuser:
+        date = request.GET.get("date")
+        lines = Line.objects.all()
+        stations = Station.objects.all()
+        map = []
+
+        for line in lines:
+            line_stations = (
+                ThroughTable.objects.filter(line=line)
+                .select_related("station")
+                .order_by("order")
+            )
+
+            stations_list = [link.station for link in line_stations]
+
+            map.append({"line": line, "stations": stations_list})
+
+        context = {
+            'footfall_data': FootFall.objects.filter(date=date) if date else None,
+            'lines': lines,
+            'stations': stations,
+            'map': map,
+            'service_status': ServiceStatus.objects.first().active if ServiceStatus.objects.exists() else True, # type: ignore
+        }
+        return render(request, 'admin.html', context)
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
+    
+
+def add_line(request):
+    if request.method == "POST":
+        name = request.POST.get('line_name')
+        # print(name)
+        Line.objects.create(name=name)
+        return redirect('admin')
+    return redirect('admin')
+
+def add_station(request):
+    if request.method == "POST":
+        name = request.POST.get('station_name')
+        # print(name)
+        order = int(request.POST.get('order'))
+        line_obj = Line.objects.get(id=request.POST.get('line'))
+        # print(line_obj)
+
+        if order > ThroughTable.objects.filter(line_id=line_obj.id).count()+1:
+            messages.error(request, 'Invalid order: exceeds number of stations in line')
+            return redirect('admin')
+        
+        Station.objects.create(name=name)
+        ThroughTable.objects.create(
+            line=line_obj,
+            station=Station.objects.get(name=name).id,
+            order=order
+        )
+        return redirect('admin')
+    return redirect('admin')
+
+def link_station(request):
+    if request.method == 'POST':
+        pass
+        station_obj = Station.objects.get(id=request.POST.get('station_id'))
+        line_obj = Line.objects.get(id=request.POST.get('line_id'))
+        order = int(request.POST.get('order'))
+        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
+
+        if order > stations_on_line + 1:
+            messages.error(request, 'Invalid order: exceeds number of stations in line')
+            return redirect('admin')
+        
+        while order < stations_on_line + 1: # create space to insert station into line
+            ThroughTable.objects.filter(line=line_obj, order=stations_on_line).update(order=stations_on_line+1)
+            stations_on_line -= 1
+
+        ThroughTable.objects.create(
+            line=line_obj,
+            station=station_obj,
+            order=order
+        )
+        return redirect('admin')
+    
+
+def service_toggle(request):
+    if request.method == 'POST':
+        status = request.POST.get('service_status') == True
+        if ServiceStatus.objects.exists():
+            service_status = ServiceStatus.objects.first()
+            service_status.active = not service_status.active # type: ignore
+            service_status.save() # type: ignore
+        else:
+            ServiceStatus.objects.create(active=status)
+        return redirect('admin')
+    
+
+def offline_ticket(request):
+    if request.method == 'POST':
+        start_station = ScannerProfile.objects.get(user=request.user).station
+        user = CustomUser.objects.get(username=request.POST.get('username'))
+        # print(request.POST.get('username'))
+        # print(request.POST.get('end_station'))
+        end_station = Station.objects.get(pk=request.POST.get('end_station'))
+        # print(end_station)
+
+        try:
+            ticket = fare.metro_system().generate_ticket(start_station.id, end_station.id)
+        except fare.NoPathError:
+            messages.error(request, f"No path to {end_station.name}.")
+            return redirect("offline_ticket")
+        except fare.ZeroPathError:
+            messages.error(request, "Please select a different station.")
+            return redirect("offline_ticket")
+
+        Ticket.objects.create(
+            user=user,
+            start_station=start_station,
+            end_station=end_station,
+            price=ticket.price,
+            uid=ticket.id,
+            status=Ticket.Status.IN_USE,
+        )
+        messages.success(request, f'Offline ticket issued to {user.username} from {start_station.name} to {end_station.name} at price {ticket.price}')
+
+        send_mail(
+                subject="Metro system Offline Ticket Issued",
+                message=f"Offline ticket issued \n From: {start_station.name} \n To: {end_station.name} \n Price: {ticket.price} \n Ticket UID: {ticket.id} \n Please pay at the counter.",
+                recipient_list=[user.email],
+                from_email="metrosystem.otp"
+        )
+
+    context = {
+        'is_scanner': True,
+        'stations': Station.objects.all(),
+        'station_name': ScannerProfile.objects.get(user=request.user).station.name,
+    }
+    return render(request, 'offline_ticket.html', context)
 
 # request response cycle
 # docker

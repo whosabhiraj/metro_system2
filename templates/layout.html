@@ -26,6 +26,16 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="{% url 'ticket_map' %}">Map</a>
                     </li>
+                    {% if user.is_superuser %}
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'admin' %}">Admin</a>
+                    </li>
+                    {% endif %}
+                    {% if is_scanner %}
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'offline_ticket' %}">Offline ticket</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
 
