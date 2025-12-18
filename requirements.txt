@@ -3,4 +3,7 @@ django-allauth==65.13.1
 psycopg2-binary==2.9.11
 pillow==11.3.0
 requests
-jwt
+PyJWT
+cryptography
+gunicorn
+whitenoise
