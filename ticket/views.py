@@ -316,11 +316,14 @@ def add_station(request):
         if order > ThroughTable.objects.filter(line_id=line_obj.id).count()+1:
             messages.error(request, 'Invalid order: exceeds number of stations in line')
             return redirect('admin')
+        if Station.objects.filter(name=name).exists():
+            messages.error(request, 'Station with this name already exists')
+            return redirect('admin')
         
         Station.objects.create(name=name)
         ThroughTable.objects.create(
             line=line_obj,
-            station=Station.objects.get(name=name).id,
+            station=Station.objects.get(name=name),
             order=order
         )
         return redirect('admin')

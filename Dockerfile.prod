@@ -1,0 +1,55 @@
+# pull official base image
+FROM python:3.11.4-slim as builder
+
+# set work directory
+WORKDIR /usr/src/metro_system
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# install system dependencies
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends gcc
+
+COPY . /usr/src/metro_system/
+
+COPY ./requirements.txt .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/metro_system/wheels -r requirements.txt
+
+# pull official base image
+FROM python:3.11.4-slim
+
+# create directory for the metro_system user
+RUN mkdir -p /home/metro_system
+
+# create the metro_system user
+RUN addgroup --system metro_system
+RUN adduser --system --group metro_system
+
+# create the metro_systemropriate directories
+ENV HOME=/home/metro_system
+ENV METRO_SYSTEM_HOME=/home/metro_system/web
+RUN mkdir $METRO_SYSTEM_HOME
+WORKDIR $METRO_SYSTEM_HOME
+
+# install dependencies
+# ... previous lines ...
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+
+
+COPY --from=builder /usr/src/metro_system/wheels /wheels
+COPY --from=builder /usr/src/metro_system/requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache /wheels/*
+
+COPY . $METRO_SYSTEM_HOME
+
+RUN mkdir $METRO_SYSTEM_HOME/staticfiles
+RUN SECRET_KEY=djang-dummy python manage.py collectstatic --noinput --clear
+# chown all the files to the metro_system user
+RUN chown -R metro_system:metro_system $METRO_SYSTEM_HOME
+
+# change to the metro_system user
+USER metro_system

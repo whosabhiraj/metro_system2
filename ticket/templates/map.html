@@ -6,10 +6,33 @@
 <style>
     h1 { text-align: center; }
     
-    /* specific styling for the map visualization */
     .line-card { margin-bottom: 2rem; }
-    .station-badge { font-size: 1.1em; padding: 10px; }
-    .arrow { margin: 0 10px; color: #adb5bd; }
+
+    /* Forces the stations into a single line */
+    .metro-line-container {
+        display: flex;
+        flex-wrap: nowrap;       /* Do not wrap to next line */
+        align-items: center;
+        justify-content: center; /* Center the visualization */
+        width: 100%;
+    }
+
+    /* Scales the text and padding based on screen width */
+    .station-badge { 
+        /* Minimum 8px, Preference 2.5% of width, Max 1.1em */
+        font-size: clamp(8px, 2.5vw, 1.1em); 
+        /* Dynamic padding that shrinks on phone */
+        padding: 0.5vw 1vw; 
+        /* Prevents "Station Name" from splitting into two lines */
+        white-space: nowrap; 
+    }
+
+    /* Scales the arrow and margins */
+    .arrow { 
+        margin: 0 0.5vw; 
+        color: #adb5bd; 
+        font-size: clamp(10px, 3vw, 1.2em);
+    }
 </style>
 
 <br>
@@ -26,7 +49,7 @@
                         <h3>{{ item.line }}</h3>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex flex-wrap align-items-center">
+                        <div class="metro-line-container">
                             
                             {% for station in item.stations %}
                                 <span class="badge bg-secondary station-badge">

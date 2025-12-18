@@ -21,13 +21,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6e2kebau_=dx+=um#bqc&7vi-77y0#71h5a=%5=7urwq_$@h3_'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
+DEBUG = bool(os.environ.get("DEBUG", default=0))
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.dev/']
+# CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.dev/']
+CSRF_TRUSTED_ORIGINS = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', 'http://127.0.0.1').split(',') + ['https://*.ngrok-free.app/', 'https://*.ngrok-free.dev/', 'https://abhiraj.tech']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -69,6 +76,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
         # Add the account middleware:
     "allauth.account.middleware.AccountMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
 ROOT_URLCONF = 'metro_system.urls'
@@ -96,17 +104,25 @@ WSGI_APPLICATION = 'metro_system.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "database",           # The DB you created in Step 3
-        "USER": "postgres",           # The default superuser
-        "PASSWORD": "abhiraj", # <--- CHANGE THIS!
-        "HOST": "localhost",          # Running locally
-        "PORT": "5432",
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "NAME": "database",           # The DB you created in Step 3
+    #     "USER": "postgres",           # The default superuser
+    #     "PASSWORD": "abhiraj", # <--- CHANGE THIS!
+    #     "HOST": "localhost",          # Running locally
+    #     "PORT": "5432",
+    # }
+
+    'default': {
+        'ENGINE': os.getenv('DATABASE_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DATABASE_NAME', 'database'),
+        'USER': os.getenv('DATABASE_USERNAME', 'postgres'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'abhiraj'),
+        'HOST': os.getenv('DATABASE_HOST', 'db'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
     }
+
 }
-
-
 
 
 # Password validation
@@ -144,6 +160,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_FILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -164,7 +182,7 @@ ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 LOGOUT_REDIRECT_URL = '/accounts/login'
 
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' #TODO: CHANGE THIS WHILE DEMO
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https' #TODO: CHANGE THIS WHILE DEMO
 
 SOCIALACCOUNT_QUERY_EMAIL = True
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
@@ -187,3 +205,4 @@ EMAIL_HOST_PASSWORD = 'ygza coxm tpuf qtwx'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", '127.0.0.1:8000').split(" ")
