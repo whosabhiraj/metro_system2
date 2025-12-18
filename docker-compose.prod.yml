@@ -1,0 +1,47 @@
+services:
+  web:
+    image: f20250983/metro_project:v8
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: gunicorn metro_system.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - db
+    restart: always
+    volumes:
+      - static_volume:/home/metro_system/web/staticfiles/
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abhiraj
+      POSTGRES_DB: database
+  nginx:
+    build: ./nginx
+    volumes:
+      - static_volume:/home/metro_system/web/staticfiles/
+      - ./certbot/conf:/etc/letsencrypt  # stores the certificates
+      - ./certbot/www:/var/www/certbot  # shared folder for the challenge
+    ports:
+      - "80:80"
+      - "443:443" # SSL
+    depends_on:
+      - web
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # renew every 12 hours
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres_data:
+  static_volume:
+
