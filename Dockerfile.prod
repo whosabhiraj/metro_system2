@@ -48,6 +48,12 @@ COPY . $METRO_SYSTEM_HOME
 
 RUN mkdir $METRO_SYSTEM_HOME/staticfiles
 RUN SECRET_KEY=djang-dummy python manage.py collectstatic --noinput --clear
+
+# install git on container itself so we can instantly clone minor fixes
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN git init && \
+    git remote add origin https://github.com/whosabhiraj/metro_system2.git
+    
 # chown all the files to the metro_system user
 RUN chown -R metro_system:metro_system $METRO_SYSTEM_HOME
 

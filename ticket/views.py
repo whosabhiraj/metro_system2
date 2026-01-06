@@ -320,6 +320,11 @@ def add_station(request):
             messages.error(request, 'Station with this name already exists')
             return redirect('admin')
         
+        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
+        while order < stations_on_line + 1: # create space to insert station into line
+            ThroughTable.objects.filter(line=line_obj, order=stations_on_line).update(order=stations_on_line+1)
+            stations_on_line -= 1
+        
         Station.objects.create(name=name)
         ThroughTable.objects.create(
             line=line_obj,
