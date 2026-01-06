@@ -9,9 +9,9 @@
 # django orm
 
 
-# use git 
+# use git - done
 # multiple enginx
-# fix error - add station
+# fix error - add station - done
 # docker working
 # nginx twice etc
 # run tests
