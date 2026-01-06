@@ -406,13 +406,3 @@ def offline_ticket(request):
         'station_name': ScannerProfile.objects.get(user=request.user).station.name,
     }
     return render(request, 'offline_ticket.html', context)
-
-# request response cycle
-# docker
-# authentication/authoriszation
-# edge case
-# drop down hogya
-# otp hogya
-# through table hogya
-# ngnix
-# django orm
