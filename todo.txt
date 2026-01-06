@@ -1,0 +1,17 @@
+# request response cycle
+# docker
+# authentication/authoriszation
+# edge case
+# drop down hogya
+# otp hogya
+# through table hogya
+# ngnix
+# django orm
+
+
+# use git 
+# multiple enginx
+# fix error - add station
+# docker working
+# nginx twice etc
+# run tests
