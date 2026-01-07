@@ -10,8 +10,8 @@
 
 
 # use git - done
-# multiple enginx
+# multiple enginx - done
 # fix error - add station - done
-# docker working
-# nginx twice etc
-# run tests
+# docker working 
+# nginx twice etc - done
+# run tests - done

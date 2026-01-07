@@ -358,6 +358,26 @@ def link_station(request):
         return redirect('admin')
     
 
+def delete_station(request):
+    if request.method == "POST":
+        station_id = request.POST.get('station_id')
+
+        station_obj = Station.objects.get(id=station_id)
+        affected_links = ThroughTable.objects.filter(station=station_obj)
+
+        affected_links.delete()
+        for link in affected_links:
+            current_line = link.line
+            removed_order = link.order
+            for order in range(removed_order + 1, ThroughTable.objects.filter(line=current_line).count() + 1):
+                ThroughTable.objects.filter(line=current_line, order=order).update(order=order - 1)
+        
+        messages.success(request, f'Station "{station_obj.name}" removed and subsequent stations shifted.')
+        return redirect('admin')
+
+    return redirect('admin')
+    
+
 def service_toggle(request):
     if request.method == 'POST':
         status = request.POST.get('service_status') == True

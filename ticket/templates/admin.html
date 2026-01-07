@@ -166,7 +166,7 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header bg-warning text-dark">
                     Link Existing Station
                 </div>
@@ -205,5 +205,30 @@
                 </div>
             </div>
 
-        </div> </div> </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white fw-bold">
+                    Delete Station Globally
+                </div>
+                <div class="card-body">
+                    <p class="small text-danger mb-3">
+                        <strong>Warning:</strong> This permanently removes the station from <strong>all lines</strong> and shifts following stations back.
+                    </p>
+                    <form method="post" action="{% url 'delete_station' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <select name="station_id" class="form-select border-danger" required>
+                                <option value="" selected disabled>-- Select Station to delete --</option>
+                                {% for station in stations %}
+                                    <option value="{{ station.id }}">{{ station.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 fw-bold">PERMANENTLY DELETE</button>
+                    </form>
+                </div>
+            </div>
+
+        </div> 
+    </div> 
+</div>
 {% endblock %}
