@@ -300,6 +300,9 @@ def admin(request):
 def add_line(request):
     if request.method == "POST":
         name = request.POST.get('line_name')
+        if Line.objects.filter(name=name).exists():
+            messages.error(request, 'Line with this name already exists')
+            return redirect('admin')
         # print(name)
         Line.objects.create(name=name)
         return redirect('admin')
