@@ -1,1 +1,3 @@
 .git
+certbot/
+__pycache__/
