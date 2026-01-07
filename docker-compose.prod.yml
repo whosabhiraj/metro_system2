@@ -1,6 +1,6 @@
 services:
   web:
-    image: f20250983/metro_project:v9
+    image: f20250983/metro_project:v10
     build:
       context: .
       dockerfile: Dockerfile.prod
