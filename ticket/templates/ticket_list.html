@@ -30,8 +30,10 @@
                                         <span style="color: green;">Active</span>
                                         {% elif ticket.status == 'IN_USE' %}
                                             <span style="color: orange;">In Use</span>
+                                        {% elif ticket.status == 'USED'%}
+                                            <span style="color: red;">Used</span>
                                         {% else %}
-                                            <span style="color: red;">Expired</span>
+                                            <span style="color: gray;">Expired</span>
                                         {% endif %}
                 </p>
             
