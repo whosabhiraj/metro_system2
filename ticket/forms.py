@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 class TicketForm(forms.ModelForm):
     start_station = forms.ModelChoiceField(
-        queryset=Station.objects.all(),
+        queryset=Station.objects.all().order_by("id"),
         label="Start Station",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
