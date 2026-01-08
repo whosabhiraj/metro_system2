@@ -35,6 +35,7 @@ def ticket_list(request):
     tickets = Ticket.objects.filter(user=request.user)
     for ticket in tickets:
         if ticket.created_at + datetime.timedelta(days = 1) < timezone.now():
+            print("expired: too old")
             ticket.status = ticket.Status.EXPIRED
             ticket.save()
 
@@ -214,6 +215,7 @@ def scan_ticket(request):
             elif ticket.status == Ticket.Status.IN_USE:
                 if ticket.end_station.id == scanner_location.id:
                     ticket.status = Ticket.Status.USED
+                    print("used: scanned")
                     ticket.save()
                     footfall = FootFall.objects.filter(station=scanner_location, date=datetime.date.today()).first()
                     if not footfall: # if no entry is found, entry is made
