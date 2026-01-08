@@ -6,6 +6,20 @@
 <style>h1 {text-align: center;}</style>
 <br>
 
+{% if messages %}
+<div class="container mt-3">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} shadow-lg" 
+         role="alert" 
+         style="border: 4px solid; border-radius: 5px; font-size: 1.4rem; font-weight: 900;">
+        
+        <div class="py-2 text-center">
+            {{ message }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 <div class="card" style="width: 18rem;">
   <div class="card-body">
     <h4 class="card-title">Your current balance</h4>
