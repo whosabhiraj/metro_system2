@@ -133,9 +133,12 @@ def ticket_create(request):
 def ticket_cancel(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
     if request.method == "POST":
-        request.user.balance += ticket.price
-        ticket.delete()
-        request.user.save()
+        if ticket.Status == 'ACTIVE':
+            request.user.balance += ticket.price
+            ticket.delete()
+            request.user.save()
+        else:
+            messages.error(request, "You can only cancel active tickets.")
         return redirect("ticket_list")
     return render(request, "ticket_confirm_cancel.html", {"ticket": ticket})
 

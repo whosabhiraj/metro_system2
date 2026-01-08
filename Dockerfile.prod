@@ -12,10 +12,10 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends gcc
 
-COPY . /usr/src/metro_system/
-
 COPY ./requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/metro_system/wheels -r requirements.txt
+
+COPY . /usr/src/metro_system/
 
 # pull official base image
 FROM python:3.11.4-slim
