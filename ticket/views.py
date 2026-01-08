@@ -147,11 +147,15 @@ def register(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password1"])
-            user.save()
-        login(request, user, backend="django.contrib.auth.backends.ModelBackend")  # type: ignore
-        redirect("ticket_list")
+            if not CustomUser.objects.filter(username=form.cleaned_data['username']).exists():
+                user = form.save(commit=False)
+                user.set_password(form.cleaned_data["password1"])
+                user.save()
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")  # type: ignore
+                redirect("ticket_list")
+            else:
+                messages.error(request, "Username already taken.")
+                return redirect("register")
     else:
         form = RegistrationForm()
 

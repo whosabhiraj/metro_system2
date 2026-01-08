@@ -36,7 +36,7 @@
 <div class="container row gap-3">
     {% for ticket in tickets %}
     {% if ticket.user == request.user %}
-        <div class="card" style="width: 24rem;">
+        <div class="card" style="width: 20rem;">
         <div class="card-body">
             <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
             <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
