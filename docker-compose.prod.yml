@@ -24,24 +24,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: abhiraj
       POSTGRES_DB: database
-  nginx-external: # shouldn't handle static directly, only routing
+  nginx-internal:
     build: ./nginx
-    volumes:
-      - ./nginx/external.conf:/etc/nginx/conf.d/default.conf 
-      - ./certbot/conf:/etc/letsencrypt  # stores the certificates
-      - ./certbot/www:/var/www/certbot  # shared folder for the challenge
     ports:
-      - "80:80"
-      - "443:443" # SSL
-    depends_on:
-      - nginx-internal
-  nginx-internal: # handles static files, no ports 
-    build: ./nginx
+      - "127.0.0.1:8080:80"  # bridge connection from 127001:8080 to container:80
     volumes:
       - ./nginx/internal.conf:/etc/nginx/conf.d/default.conf 
       - static_volume:/home/metro_system/web/staticfiles/
-    depends_on:
-      - web
   certbot:
     image: certbot/certbot
     volumes:
