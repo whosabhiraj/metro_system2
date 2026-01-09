@@ -9,6 +9,7 @@ from django.contrib import messages
 import datetime, random
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.http import Http404
 
 # Create your views here.
 
@@ -27,11 +28,8 @@ def ticket_list(request):
     except ScannerProfile.DoesNotExist:
         pass
     
+    mark_expired(request.user)
     tickets = Ticket.objects.filter(user=request.user)
-    for ticket in tickets:
-        if ticket.created_at + datetime.timedelta(days = 1) < timezone.now():
-            ticket.status = ticket.Status.EXPIRED
-            ticket.save()
     return render(request, "ticket_list.html", {"tickets": tickets})
 
 
@@ -126,7 +124,12 @@ def ticket_create(request):
 
 @login_required
 def ticket_cancel(request, ticket_id):
-    ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+    mark_expired(request.user)
+    try:
+        ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+    except Http404:
+        messages.error(request, "Ticket does not exist.")
+        return redirect("ticket_list")
     if request.method == "POST":
         if ticket.Status == 'ACTIVE':
             request.user.balance += ticket.price
@@ -178,6 +181,7 @@ def insufficient_balance(request):
 
 @login_required
 def scan_ticket(request):
+    mark_expired(request.user)
     try:
         profile = ScannerProfile.objects.select_related("station").get(
             user=request.user
@@ -439,3 +443,11 @@ def offline_ticket(request):
 
 def service_unavailable(request):
     return render(request, 'outofservice.html')
+
+
+def mark_expired(user):
+    tickets = Ticket.objects.filter(user=user).exclude(status=Ticket.Status.EXPIRED)
+    for ticket in tickets:
+        if ticket.created_at + datetime.timedelta(days = 1) < timezone.now():
+            ticket.status = ticket.Status.EXPIRED
+            ticket.save()
