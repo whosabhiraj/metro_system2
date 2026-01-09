@@ -10,6 +10,7 @@ import datetime, random
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.http import Http404
+from allauth.account.models import EmailAddress
 
 # Create your views here.
 
@@ -145,14 +146,20 @@ def register(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            if not CustomUser.objects.filter(username=form.cleaned_data['username']).exists():
+            if not (CustomUser.objects.filter(username=form.cleaned_data['username']).exists() or CustomUser.objects.filter(email=form.cleaned_data['email']).exists()):
                 user = form.save(commit=False)
                 user.set_password(form.cleaned_data["password1"])
                 user.save()
+                EmailAddress.objects.create(
+                    user=user, 
+                    email=user.email, 
+                    verified=True, 
+                    primary=True
+                )
                 login(request, user, backend="django.contrib.auth.backends.ModelBackend")  # type: ignore
                 return redirect("ticket_list")
             else:
-                messages.error(request, "Username already taken.")
+                messages.error(request, "Username/Email already taken.")
                 return redirect("register")
     else:
         form = RegistrationForm()
