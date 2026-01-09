@@ -19,11 +19,6 @@ def index(request):
 
 @login_required
 def ticket_list(request):
-    if ServiceStatus.objects.exists():
-        service_status = ServiceStatus.objects.first().active # type: ignore
-        # print(service_status)
-        if not service_status:
-            return render(request, "outofservice.html")
     try:
         profile = ScannerProfile.objects.get(user=request.user)
         if profile:
@@ -152,7 +147,7 @@ def register(request):
                 user.set_password(form.cleaned_data["password1"])
                 user.save()
                 login(request, user, backend="django.contrib.auth.backends.ModelBackend")  # type: ignore
-                redirect("ticket_list")
+                return redirect("ticket_list")
             else:
                 messages.error(request, "Username already taken.")
                 return redirect("register")
@@ -440,3 +435,7 @@ def offline_ticket(request):
         'station_name': ScannerProfile.objects.get(user=request.user).station.name,
     }
     return render(request, 'offline_ticket.html', context)
+
+
+def service_unavailable(request):
+    return render(request, 'outofservice.html')

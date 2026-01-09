@@ -11,6 +11,7 @@ urlpatterns = [
     path("scanner/", views.scan_ticket, name="scanner"),
     path("index/", views.index, name="index"),
     path("map/", views.ticket_map, name="ticket_map"),
+    path("unavailable/", views.service_unavailable, name="service_unavailable"),
     path("admin/", views.admin, name="admin"),
     path("admin/add_line/", views.add_line, name="add_line"),
     path("admin/add_station/", views.add_station, name="add_station"),
