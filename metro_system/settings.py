@@ -207,3 +207,15 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 ALLOWED_HOSTS = ['*']
 # ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", '127.0.0.1:8000').split(" ")
+
+# social account adapter: linking social accounts to existing users
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
+
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none" # no confirmation email so its easier 
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True # link accounts by email
+
+SOCIALACCOUNT_AUTO_SIGNUP = True # automatically signup users with social accounts
+
+ACCOUNT_EMAIL_REQUIRED = True # for sending otps and also allauth
+ACCOUNT_UNIQUE_EMAIL = True # avoid conflict
+ACCOUNT_AUTHENTICATION_METHOD = "username_email" # allow login by username or email 
