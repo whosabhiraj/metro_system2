@@ -36,7 +36,7 @@
 <div class="container row gap-3">
     {% for ticket in tickets %}
     {% if ticket.user == request.user %}
-        <div class="card" style="width: 20rem;">
+        <div class="card" style="width: 22rem;">
         <div class="card-body">
             <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
             <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
@@ -53,6 +53,12 @@
             
         {% if ticket.status == 'ACTIVE' %}
             <a href="{% url "ticket_cancel" ticket.id %}" class="btn btn-danger">Cancel ticket</a>
+        {% endif %}
+        {% if ticket.scan_in%}
+            <p class="card-text">Scanned In at: {{ticket.scan_in}}</p>
+        {% endif %}
+        {% if ticket.scan_out%}
+            <p class="card-text">Scanned Out at: {{ticket.scan_out}}</p>
         {% endif %}        
     </div>
 </div>
