@@ -1,0 +1,2 @@
+0 0 * * * docker exec metro_project-web-1 sh -c "python /home/metro_system/web/manage.py shell < /home/metro_system/web/mark_expired.py"
+# this line is added to crontab -e
