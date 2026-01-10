@@ -60,6 +60,8 @@ class Ticket(models.Model):
     price = models.PositiveIntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     uid = models.CharField(max_length=20)
+    scan_in = models.DateTimeField(null=True)
+    scan_out = models.DateTimeField(null=True)
 
     class Status(models.TextChoices):
         ACTIVE = "ACTIVE", "Active"
@@ -86,13 +88,6 @@ class ScannerProfile(models.Model):
 class OTP(models.Model):
     code = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
-
-
-class FootFall(models.Model):
-    station = models.ForeignKey(Station, on_delete=models.CASCADE)
-    into = models.PositiveIntegerField(default=0)  # cant use in
-    out = models.PositiveIntegerField(default=0)
-    date = models.DateField()
 
 
 class ServiceStatus(models.Model):

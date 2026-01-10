@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .forms import TicketForm, RegistrationForm, AddMoneyForm
-from .models import Ticket, Station, Line, ScannerProfile, ThroughTable, OTP, FootFall, ServiceStatus, CustomUser
+from .models import Ticket, Station, Line, ScannerProfile, ThroughTable, OTP, ServiceStatus, CustomUser
 from django.shortcuts import get_object_or_404, redirect
 from . import metro_orm as fare
 from django.contrib.auth.decorators import login_required
@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.http import Http404
 from allauth.account.models import EmailAddress
+from django.db.models import Count, Q, Value
 
 # Create your views here.
 
@@ -208,13 +209,8 @@ def scan_ticket(request):
             if ticket.status == Ticket.Status.ACTIVE:
                 if ticket.start_station.id == scanner_location.id:
                     ticket.status = Ticket.Status.IN_USE
-                    ticket.save()
-                    footfall = FootFall.objects.filter(station=scanner_location, date=datetime.date.today()).first()
-                    if not footfall:
-                        footfall = FootFall(station=scanner_location, date=datetime.date.today(), into=1, out=0)
-                    else:
-                        footfall.into += 1
-                    footfall.save()
+                    ticket.scan_in = timezone.now() #
+                    ticket.save()                   # scanned time field instead of a different model
                     messages.success(
                         request, f"Entry Approved at {scanner_location.name}!"
                     )
@@ -226,13 +222,8 @@ def scan_ticket(request):
             elif ticket.status == Ticket.Status.IN_USE:
                 if ticket.end_station.id == scanner_location.id:
                     ticket.status = Ticket.Status.USED
-                    ticket.save()
-                    footfall = FootFall.objects.filter(station=scanner_location, date=datetime.date.today()).first()
-                    if not footfall: # if no entry is found, entry is made
-                        footfall = FootFall(station=scanner_location, date=datetime.date.today(), into=0, out=1)
-                    else: # if entry is found, count is incremented
-                        footfall.out += 1
-                    footfall.save()
+                    ticket.scan_out = timezone.now() #
+                    ticket.save()                    # same
                     messages.success(
                         request, f"Exit Approved at {scanner_location.name}!"
                     )
@@ -296,8 +287,18 @@ def admin(request):
 
             map.append({"line": line, "stations": stations_list})
 
+        footfall = None
+        if date:
+            footfall = Station.objects.annotate(
+                into = Count('start', filter=Q(start__scan_in__date=date)),
+                out = Count('end', filter=Q(end__scan_out__date=date)),
+                date = Value(f"{date}")
+            )
+        
+
         context = {
-            'footfall_data': FootFall.objects.filter(date=date) if date else None,
+            'footfall': footfall,
+            'selected_date': date if date else None,
             'lines': lines,
             'stations': stations,
             'map': map,
