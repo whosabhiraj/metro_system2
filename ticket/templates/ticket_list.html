@@ -20,6 +20,7 @@
     {% endfor %}
 </div>
 {% endif %}
+
 <div class="card" style="width: 18rem;">
   <div class="card-body">
     <h4 class="card-title">Your current balance</h4>
@@ -34,36 +35,118 @@
 <a class="btn btn-primary mb-4 mt-4" href="{% url 'ticket_create' %}">Create a ticket</a>
 
 <div class="container row gap-3">
+
+    {# --- 1. IN USE TICKETS (Top Priority) --- #}
     {% for ticket in tickets %}
-    {% if ticket.user == request.user %}
+    {% if ticket.user == request.user and ticket.status == 'IN_USE' %}
         <div class="card" style="width: 22rem;">
-        <div class="card-body">
-            <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
-            <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
-            <p class="card-text bold-text" >Status: {% if ticket.status == 'ACTIVE' %}
-                                        <span style="color: green;">Active</span>
-                                        {% elif ticket.status == 'IN_USE' %}
-                                            <span style="color: orange;">In Use</span>
-                                        {% elif ticket.status == 'USED'%}
-                                            <span style="color: red;">Used</span>
-                                        {% else %}
-                                            <span style="color: gray;">Expired</span>
-                                        {% endif %}
-                </p>
-            
-        {% if ticket.status == 'ACTIVE' %}
-            <a href="{% url "ticket_cancel" ticket.id %}" class="btn btn-danger">Cancel ticket</a>
-        {% endif %}
-        {% if ticket.scan_in%}
-            <p class="card-text">Scanned In at: {{ticket.scan_in}}</p>
-        {% endif %}
-        {% if ticket.scan_out%}
-            <p class="card-text">Scanned Out at: {{ticket.scan_out}}</p>
-        {% endif %}        
-    </div>
-</div>
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+                
+                <p class="card-text">
+                    <span class="bold-text">Status: <span style="color: orange;">In Use</span></span>
+                    {% if ticket.scan_in%}
+                        <br>Scanned In at: {{ticket.scan_in}}
+                    {% endif %}
+                    {% if ticket.scan_out%}
+                        <br>Scanned Out at: {{ticket.scan_out}}
+                    {% endif %}
+                </p>     
+            </div>
+        </div>
     {% endif %}
     {% endfor %}
+
+    {# --- 2. ACTIVE TICKETS --- #}
+    {% for ticket in tickets %}
+    {% if ticket.user == request.user and ticket.status == 'ACTIVE' %}
+        <div class="card" style="width: 22rem;">
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+                
+                <p class="card-text">
+                    <span class="bold-text">Status: <span style="color: green;">Active</span></span>
+                    {% if ticket.scan_in%}
+                        <br>Scanned In at: {{ticket.scan_in}}
+                    {% endif %}
+                    {% if ticket.scan_out%}
+                        <br>Scanned Out at: {{ticket.scan_out}}
+                    {% endif %}
+                </p>
+
+                <a href="{% url "ticket_cancel" ticket.id %}" class="btn btn-danger">Cancel ticket</a>
+            </div>
+        </div>
+    {% endif %}
+    {% endfor %}
+
+    {# --- 3. USED TICKETS --- #}
+    {% for ticket in tickets %}
+    {% if ticket.user == request.user and ticket.status == 'USED' %}
+        <div class="card" style="width: 22rem;">
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+                
+                <p class="card-text">
+                    <span class="bold-text">Status: <span style="color: red;">Used</span></span>
+                    {% if ticket.scan_in%}
+                        <br>Scanned In at: {{ticket.scan_in}}
+                    {% endif %}
+                    {% if ticket.scan_out%}
+                        <br>Scanned Out at: {{ticket.scan_out}}
+                    {% endif %}
+                </p>       
+            </div>
+        </div>
+    {% endif %}
+    {% endfor %}
+
+    {# --- 4. EXPIRED / OTHER TICKETS --- #}
+    {% for ticket in tickets %}
+    {% if ticket.user == request.user and ticket.status != 'IN_USE' and ticket.status != 'ACTIVE' and ticket.status != 'USED' %}
+        <div class="card" style="width: 22rem;">
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+                
+                <p class="card-text">
+                    <span class="bold-text">Status: <span style="color: gray;">Expired</span></span>
+                    {% if ticket.scan_in%}
+                        <br>Scanned In at: {{ticket.scan_in}}
+                    {% endif %}
+                    {% if ticket.scan_out%}
+                        <br>Scanned Out at: {{ticket.scan_out}}
+                    {% endif %}
+                </p>      
+            </div>
+        </div>
+    {% endif %}
+    {% endfor %}
+
+    {% for ticket in tickets %}
+    {% if ticket.user == request.user and ticket.status == 'CANCELLED' %}
+        <div class="card" style="width: 22rem;">
+            <div class="card-body">
+                <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
+                <p class="card-text">From: {{ticket.start_station}} <br> To: {{ticket.end_station}} <br> Price: {{ticket.price}} <br> Created at: {{ticket.created_at}}<br></p>
+                
+                <p class="card-text">
+                    <span class="bold-text">Status: <span style="color: red;">Cancelled</span></span>
+                    {% if ticket.scan_in%}
+                        <br>Scanned In at: {{ticket.scan_in}}
+                    {% endif %}
+                    {% if ticket.scan_out%}
+                        <br>Scanned Out at: {{ticket.scan_out}}
+                    {% endif %}
+                </p>     
+            </div>
+        </div>
+    {% endif %}
+    {% endfor %}
+
 </div>
 
 {% endblock %}
