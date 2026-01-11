@@ -68,6 +68,7 @@ class Ticket(models.Model):
         IN_USE = "IN_USE", "In Use"
         EXPIRED = "EXPIRED", "Expired"
         USED = "USED", "Used"
+        CANCELLED = "CANCELLED", "Cancelled"
 
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.ACTIVE
