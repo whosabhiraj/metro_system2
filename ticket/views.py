@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.http import Http404
 from allauth.account.models import EmailAddress
-from django.db.models import Count, Q, Value
+from django.db.models import Count, Q, Value, Prefetch, F
 
 # Create your views here.
 
@@ -30,7 +30,7 @@ def ticket_list(request):
     except ScannerProfile.DoesNotExist:
         pass
     
-    tickets = Ticket.objects.filter(user=request.user)
+    tickets = Ticket.objects.filter(user=request.user).select_related("start_station", "end_station")
     return render(request, "ticket_list.html", {"tickets": tickets})
 
 
@@ -173,8 +173,7 @@ def add_money(request):
         form = AddMoneyForm(request.POST)
         if form.is_valid():
             amount = form.cleaned_data["amount"]
-            request.user.balance += amount
-            request.user.save()
+            request.user.update(balance=request.user.balance + amount)
             return redirect("ticket_list")
     else:
         form = AddMoneyForm()
@@ -248,18 +247,15 @@ def scan_ticket(request):
 
 
 def ticket_map(request):
-    lines = Line.objects.all()
+    lines = Line.objects.prefetch_related(Prefetch(                                 # all lines
+        "throughtable_set",                                                         # with all through table rows that reference line
+        queryset=ThroughTable.objects.select_related("station").order_by("order"),  # select related stations by order
+        to_attr='links'                                                             # stored in attr links
+    ))
     map = []
 
     for line in lines:
-        line_stations = (
-            ThroughTable.objects.filter(line=line)
-            .select_related("station")
-            .order_by("order")
-        )
-
-        stations_list = [link.station for link in line_stations]
-
+        stations_list = [link.station for link in line.links] # type: ignore
         map.append({"line": line, "stations": stations_list})
 
     context = {"map": map}
@@ -270,7 +266,11 @@ def ticket_map(request):
 def admin(request):
     if request.user.is_superuser:
         date = request.GET.get("date")
-        lines = Line.objects.all()
+        lines = Line.objects.prefetch_related(Prefetch(
+            "throughtable_set",
+            queryset=ThroughTable.objects.select_related("station").order_by("order"),
+            to_attr="links",
+        ))
         stations = Station.objects.all()
         map = []
 
@@ -282,7 +282,6 @@ def admin(request):
             )
 
             stations_list = [link.station for link in line_stations]
-
             map.append({"line": line, "stations": stations_list})
 
         footfall = None
@@ -292,7 +291,11 @@ def admin(request):
                 out = Count('end', filter=Q(end__scan_out__date=date)),
                 date = Value(f"{date}")
             )
-        
+        status = ServiceStatus.objects.first() 
+        if status: 
+            service_status = status.active
+        else:
+            service_status = True
 
         context = {
             'footfall': footfall,
@@ -300,7 +303,7 @@ def admin(request):
             'lines': lines,
             'stations': stations,
             'map': map,
-            'service_status': ServiceStatus.objects.first().active if ServiceStatus.objects.exists() else True, # type: ignore
+            'service_status':  service_status, # type: ignore
         }
         return render(request, 'admin.html', context)
     else:
@@ -327,22 +330,20 @@ def add_station(request):
         line_obj = Line.objects.get(id=request.POST.get('line'))
         # print(line_obj)
 
-        if order > ThroughTable.objects.filter(line_id=line_obj.id).count()+1:
+        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
+        if order > stations_on_line+1:
             messages.error(request, 'Invalid order: exceeds number of stations in line')
             return redirect('admin')
         if Station.objects.filter(name=name).exists():
             messages.error(request, 'Station with this name already exists')
             return redirect('admin')
         
-        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
-        while order < stations_on_line + 1: # create space to insert station into line
-            ThroughTable.objects.filter(line=line_obj, order=stations_on_line).update(order=stations_on_line+1)
-            stations_on_line -= 1
+        ThroughTable.objects.filter(line=line_obj, order__gt=order-1).update(order=F("order") + 1)
         
-        Station.objects.create(name=name)
+        station = Station.objects.create(name=name)
         ThroughTable.objects.create(
             line=line_obj,
-            station=Station.objects.get(name=name),
+            station=station,
             order=order
         )
         return redirect('admin')
@@ -350,7 +351,6 @@ def add_station(request):
 
 def link_station(request):
     if request.method == 'POST':
-        pass
         station_obj = Station.objects.get(id=request.POST.get('station_id'))
         line_obj = Line.objects.get(id=request.POST.get('line_id'))
         order = int(request.POST.get('order'))
@@ -360,9 +360,7 @@ def link_station(request):
             messages.error(request, 'Invalid order: exceeds number of stations in line')
             return redirect('admin')
         
-        while order < stations_on_line + 1: # create space to insert station into line
-            ThroughTable.objects.filter(line=line_obj, order=stations_on_line).update(order=stations_on_line+1)
-            stations_on_line -= 1
+        ThroughTable.objects.filter(line=line_obj, order__gt=order-1).update(order=F("order") + 1)
 
         ThroughTable.objects.create(
             line=line_obj,
@@ -377,14 +375,12 @@ def delete_station(request):
         station_id = request.POST.get('station_id')
 
         station_obj = Station.objects.get(id=station_id)
-        affected_links = ThroughTable.objects.filter(station=station_obj)
-
-        affected_links.delete()
+        affected_links = ThroughTable.objects.filter(station=station_obj).select_related('line')
+        ThroughTable.objects.filter(station=station_obj).delete()
+        station_obj.delete()
+        
         for link in affected_links:
-            current_line = link.line
-            removed_order = link.order
-            for order in range(removed_order + 1, ThroughTable.objects.filter(line=current_line).count() + 1):
-                ThroughTable.objects.filter(line=current_line, order=order).update(order=order - 1)
+            ThroughTable.objects.filter(line=link.line,order__gt=link.order).update(order=F("order") - 1)
         
         messages.success(request, f'Station "{station_obj.name}" removed and subsequent stations shifted.')
         return redirect('admin')
@@ -395,8 +391,9 @@ def delete_station(request):
 def service_toggle(request):
     if request.method == 'POST':
         status = request.POST.get('service_status') == True
-        if ServiceStatus.objects.exists():
-            service_status = ServiceStatus.objects.first()
+        service_status = ServiceStatus.objects.first()
+
+        if service_status:
             service_status.active = not service_status.active # type: ignore
             service_status.save() # type: ignore
         else:
