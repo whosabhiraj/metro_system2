@@ -338,7 +338,7 @@ def add_station(request):
             messages.error(request, 'Station with this name already exists')
             return redirect('admin')
         
-        ThroughTable.objects.filter(line=line_obj, order__gt=order-1).update(order=F("order") + 1)
+        ThroughTable.objects.filter(line=line_obj, order__gte=order).update(order=F("order") + 1)
         
         station = Station.objects.create(name=name)
         ThroughTable.objects.create(
@@ -360,7 +360,7 @@ def link_station(request):
             messages.error(request, 'Invalid order: exceeds number of stations in line')
             return redirect('admin')
         
-        ThroughTable.objects.filter(line=line_obj, order__gt=order-1).update(order=F("order") + 1)
+        ThroughTable.objects.filter(line=line_obj, order__gte=order).update(order=F("order") + 1)
 
         ThroughTable.objects.create(
             line=line_obj,
