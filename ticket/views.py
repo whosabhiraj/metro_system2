@@ -360,7 +360,10 @@ def link_station(request):
             messages.error(request, 'Invalid order: exceeds number of stations in line')
             return redirect('admin')
         
-        ThroughTable.objects.filter(line=line_obj, order__gte=order).update(order=F("order") + 1)
+        stations_to_move = ThroughTable.objects.filter(line=line_obj,order__gte=order).order_by('-order') # fixed broken transaction
+        for st in stations_to_move:
+            st.order = st.order + 1
+            st.save()
 
         ThroughTable.objects.create(
             line=line_obj,
