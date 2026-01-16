@@ -21,6 +21,9 @@
 <br>
 <form method='post'>
     {% csrf_token %}
+    <div class="alert alert-info" role="alert">
+        Please use a unique email address. 
+    </div>
     {{form.as_p}}
     <button class = 'btn btn-primary'>Register</button>
 </form>
