@@ -61,6 +61,12 @@
                                 {% endif %}
                             {% endfor %}
 
+                            {% if not item.stations %}
+                            <div class="alert alert-warning text-center">
+                                No stations on this line.
+                            </div>
+                            {% endif %}
+
                         </div>
                     </div>
                 </div>
