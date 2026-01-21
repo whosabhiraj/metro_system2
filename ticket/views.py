@@ -173,7 +173,9 @@ def add_money(request):
         form = AddMoneyForm(request.POST)
         if form.is_valid():
             amount = form.cleaned_data["amount"]
-            request.user.update(balance=request.user.balance + amount)
+            request.user.balance += amount
+            request.user.save()
+
             return redirect("ticket_list")
     else:
         form = AddMoneyForm()
