@@ -106,7 +106,7 @@
 
     {# --- 4. EXPIRED / OTHER TICKETS --- #}
     {% for ticket in tickets %}
-    {% if ticket.user == request.user and ticket.status != 'IN_USE' and ticket.status != 'ACTIVE' and ticket.status != 'USED' %}
+    {% if ticket.user == request.user and ticket.status == 'EXPIRED' %}
         <div class="card" style="width: 22rem;">
             <div class="card-body">
                 <h5 class="card-title"> Ticket ID {{ticket.uid}} </h5>
