@@ -39,10 +39,10 @@ class RegistrationForm(UserCreationForm):
 
     username = forms.CharField(max_length=30)
     email = forms.EmailField()
-    balance = forms.IntegerField(initial=0)
+    balance = forms.IntegerField(initial=0, max_value=9999999)
     first_name = forms.CharField(max_length=30, required=False)
     last_name = forms.CharField(max_length=30, required=False)
 
 
 class AddMoneyForm(forms.Form):
-    amount = forms.IntegerField(label="Amount to Add", min_value=0)
+    amount = forms.IntegerField(label="Amount to Add", min_value=0, max_value=9999999)
