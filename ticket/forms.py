@@ -17,7 +17,7 @@ class TicketForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    otp = forms.IntegerField(required=False)
+    otp = forms.IntegerField(required=False, max_value=1_000_000)
 
     class Meta:
         model = Ticket
