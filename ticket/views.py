@@ -34,6 +34,7 @@ def ticket_list(request):
     return render(request, "ticket_list.html", {"tickets": tickets})
 
 
+@login_required
 def ticket_create(request):
     form = TicketForm(request.POST)
 
@@ -313,103 +314,142 @@ def admin(request):
         return redirect("index")
     
 
+@login_required
 def add_line(request):
-    if request.method == "POST":
-        name = request.POST.get('line_name')
-        if Line.objects.filter(name=name).exists():
-            messages.error(request, 'Line with this name already exists')
+    if request.user.is_superuser:
+        if request.method == "POST":
+            name = request.POST.get('line_name')
+            if Line.objects.filter(name=name).exists():
+                messages.error(request, 'Line with this name already exists')
+                return redirect('admin')
+            # print(name)
+            Line.objects.create(name=name)
             return redirect('admin')
-        # print(name)
-        Line.objects.create(name=name)
         return redirect('admin')
-    return redirect('admin')
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
 
+
+@login_required
 def add_station(request):
-    if request.method == "POST":
-        name = request.POST.get('station_name')
-        # print(name)
-        order = int(request.POST.get('order'))
-        line_obj = Line.objects.get(id=request.POST.get('line'))
-        # print(line_obj)
+    if request.user.is_superuser:
+        if request.method == "POST":
+            name = request.POST.get('station_name')
+            # print(name)
+            order = int(request.POST.get('order'))
+            line_obj = Line.objects.get(id=request.POST.get('line'))
+            # print(line_obj)
 
-        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
-        if order > stations_on_line+1:
-            messages.error(request, 'Invalid order: exceeds number of stations in line')
+            stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
+            if order > stations_on_line+1:
+                messages.error(request, 'Invalid order: exceeds number of stations in line')
+                return redirect('admin')
+            if Station.objects.filter(name=name).exists():
+                messages.error(request, 'Station with this name already exists')
+                return redirect('admin')
+            
+            ThroughTable.objects.filter(line=line_obj, order__gte=order).update(order=F("order") + 1)
+            
+            station = Station.objects.create(name=name)
+            ThroughTable.objects.create(
+                line=line_obj,
+                station=station,
+                order=order
+            )
             return redirect('admin')
-        if Station.objects.filter(name=name).exists():
-            messages.error(request, 'Station with this name already exists')
-            return redirect('admin')
-        
-        ThroughTable.objects.filter(line=line_obj, order__gte=order).update(order=F("order") + 1)
-        
-        station = Station.objects.create(name=name)
-        ThroughTable.objects.create(
-            line=line_obj,
-            station=station,
-            order=order
-        )
         return redirect('admin')
-    return redirect('admin')
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
+    
 
+@login_required
 def link_station(request):
-    if request.method == 'POST':
-        station_obj = Station.objects.get(id=request.POST.get('station_id'))
-        line_obj = Line.objects.get(id=request.POST.get('line_id'))
-        order = int(request.POST.get('order'))
-        stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            station_obj = Station.objects.get(id=request.POST.get('station_id'))
+            line_obj = Line.objects.get(id=request.POST.get('line_id'))
+            order = int(request.POST.get('order'))
+            stations_on_line = ThroughTable.objects.filter(line_id=line_obj.id).count()
 
-        if order > stations_on_line + 1:
-            messages.error(request, 'Invalid order: exceeds number of stations in line')
+            if order > stations_on_line + 1:
+                messages.error(request, 'Invalid order: exceeds number of stations in line')
+                return redirect('admin')
+            
+            stations_to_move = ThroughTable.objects.filter(line=line_obj,order__gte=order).order_by('-order') # fixed broken transaction
+            for st in stations_to_move:
+                st.order = st.order + 1
+                st.save()
+
+            ThroughTable.objects.create(
+                line=line_obj,
+                station=station_obj,
+                order=order
+            )
             return redirect('admin')
-        
-        stations_to_move = ThroughTable.objects.filter(line=line_obj,order__gte=order).order_by('-order') # fixed broken transaction
-        for st in stations_to_move:
-            st.order = st.order + 1
-            st.save()
-
-        ThroughTable.objects.create(
-            line=line_obj,
-            station=station_obj,
-            order=order
-        )
         return redirect('admin')
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
     
 
+@login_required
 def delete_station(request):
-    if request.method == "POST":
-        station_id = request.POST.get('station_id')
+    if request.user.is_superuser:  
+        if request.method == "POST":
+            station_id = request.POST.get('station_id')
 
-        station_obj = Station.objects.get(id=station_id)
-        affected_links = ThroughTable.objects.filter(station=station_obj).select_related('line')
-        ThroughTable.objects.filter(station=station_obj).delete()
-        station_obj.delete()
-        
-        for link in affected_links:
-            ThroughTable.objects.filter(line=link.line,order__gt=link.order).update(order=F("order") - 1)
-        
-        messages.success(request, f'Station "{station_obj.name}" removed and subsequent stations shifted.')
+            station_obj = Station.objects.get(id=station_id)
+            affected_links = ThroughTable.objects.filter(station=station_obj).select_related('line')
+            ThroughTable.objects.filter(station=station_obj).delete()
+            station_obj.delete()
+            
+            for link in affected_links:
+                ThroughTable.objects.filter(line=link.line,order__gt=link.order).update(order=F("order") - 1)
+            
+            messages.success(request, f'Station "{station_obj.name}" removed and subsequent stations shifted.')
+            return redirect('admin')
+
         return redirect('admin')
-
-    return redirect('admin')
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
     
 
+@login_required
 def service_toggle(request):
-    if request.method == 'POST':
-        status = request.POST.get('service_status') == True
-        service_status = ServiceStatus.objects.first()
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            status = request.POST.get('service_status') == True
+            service_status = ServiceStatus.objects.first()
 
-        if service_status:
-            service_status.active = not service_status.active # type: ignore
-            service_status.save() # type: ignore
-        else:
-            ServiceStatus.objects.create(active=status)
+            if service_status:
+                service_status.active = not service_status.active # type: ignore
+                service_status.save() # type: ignore
+            else:
+                ServiceStatus.objects.create(active=status)
+            return redirect('admin')
         return redirect('admin')
-    
+    else:
+        messages.error(request, 'User unauthorised')
+        return redirect("index")
 
+
+@login_required
 def offline_ticket(request):
+    try:
+        scanner_profile = request.user.scannerprofile
+    except ScannerProfile.DoesNotExist:
+        messages.error(request, 'No scanner found.')
+        return redirect("index")
     if request.method == 'POST':
-        start_station = ScannerProfile.objects.get(user=request.user).station
-        user = CustomUser.objects.get(username=request.POST.get('username'))
+        try:
+            user = CustomUser.objects.get(username=request.POST.get('username'))
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User does not exist.")
+            return redirect("offline_ticket")
+        start_station = scanner_profile.station
         # print(request.POST.get('username'))
         # print(request.POST.get('end_station'))
         end_station = Station.objects.get(pk=request.POST.get('end_station'))
@@ -444,7 +484,7 @@ def offline_ticket(request):
     context = {
         'is_scanner': True,
         'stations': Station.objects.all(),
-        'station_name': ScannerProfile.objects.get(user=request.user).station.name,
+        'station_name': scanner_profile.station.name,
     }
     return render(request, 'offline_ticket.html', context)
 
