@@ -97,7 +97,7 @@ def ticket_create(request):
                 if request.user.balance < generated_ticket.price:
                     return render(request, "insufficient_balance.html")
 
-                sent_otp = OTP(code=random.randint(100000, 999999))
+                sent_otp = OTP(code=random.randint(100000, 999999), user = request.user)
                 sent_otp.save()
                 # print(sent_otp.code)  # for testing
 
