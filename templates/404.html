@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %} 404 Not Found - Metro System {% endblock %}
+
+{% block content %}
+<h1 class='text-center mt-4'>Page Not Found</h1>
+
+<div class="d-flex justify-content-center">
+    <div class="card mt-4" style="width: 24rem; border-top: 5px solid #ffc107;">
+        <div class="card-body text-center">
+            
+            <div class="mb-4 mt-2">
+                <span style="font-size: 4rem;">🔍</span>
+            </div>
+
+            <h4 class="card-title mb-3">404 - Lost Your Way?</h4>
+
+            <a href="{% url 'ticket_list' %}" class="btn btn-outline-light btn-sm">
+                Return Home
+            </a>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
