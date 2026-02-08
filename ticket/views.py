@@ -48,7 +48,11 @@ def ticket_create(request):
             # verifying otp if otp was submitted
             if input_otp:
                 saved_otp_id = request.session.get("sent_otp")
-                saved_otp = OTP.objects.get(id=saved_otp_id)
+                try:
+                    saved_otp = OTP.objects.get(id=saved_otp_id, user=request.user)
+                except OTP.DoesNotExist:
+                    messages.error(request, "No OTP found. Please try again.")
+                    return redirect("ticket_create")
                 saved_price = request.session.get("ticket_price")
 
                 if (saved_otp and int(input_otp) == saved_otp.code and saved_otp.created_at + datetime.timedelta(minutes=15) > timezone.now()):

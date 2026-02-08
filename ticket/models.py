@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 
 # Create your models here.
@@ -7,7 +7,7 @@ from django.conf import settings
 
 class Station(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
@@ -59,7 +59,7 @@ class Ticket(models.Model):
 
     price = models.PositiveIntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    uid = models.CharField(max_length=20)
+    uid = models.CharField(max_length=20, unique=True)
     scan_in = models.DateTimeField(null=True)
     scan_out = models.DateTimeField(null=True)
 
@@ -87,6 +87,7 @@ class ScannerProfile(models.Model):
 
 
 class OTP(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     code = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
