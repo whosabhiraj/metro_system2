@@ -27,11 +27,11 @@ DEBUG = bool(int(os.environ.get("DEBUG",0)))
 CSRF_TRUSTED_ORIGINS = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', 'http://127.0.0.1').split(',')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-USE_X_FORWARDED_HOST = True
-USE_X_FORWARDED_PORT = True
+USE_X_FORWARDED_HOST = True # trust the X-Forwarded-Host and port header from the proxy
+USE_X_FORWARDED_PORT = True #
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True # transfer cookie only over https
+CSRF_COOKIE_SECURE = True    #
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -65,7 +65,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # redundant now because of nginx but used in dev
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -77,7 +77,7 @@ MIDDLEWARE = [
     'ticket.middleware.ServiceStatusMiddleware',
 ]
 
-ROOT_URLCONF = 'metro_system.urls'
+ROOT_URLCONF = 'metro_system.urls' # refer to metro_system/urls.py for url patterns
 
 TEMPLATES = [
     {
